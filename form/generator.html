@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>plum · quote generator</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ──────────────────────────────────────────────────────── */
+:root {
+  --red:    #E8384F;
+  --dark:   #2D0A22;
+  --cream:  #FEF4EC;
+  --maroon: #3B0D2A;
+  --body:   #6B5660;
+  --white:  #FFFFFF;
+  --border: rgba(59,13,42,.12);
+  --shadow: 0 2px 16px rgba(45,10,34,.07);
+  --green:  #25D366;
+}
+
+/* ── RESET ───────────────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+html, body { font-family:'DM Sans',sans-serif; background:var(--cream); min-height:100vh; }
+body { padding-bottom:60px; }
+
+/* ── HEADER ──────────────────────────────────────────────────────── */
+.header {
+  background: var(--dark);
+  padding: 18px 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-logo  { font-weight:800; font-size:20px; color:var(--red); letter-spacing:-.3px; }
+.header-label { font-size:9px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:rgba(245,237,229,.3); }
+
+/* ── FORM LAYOUT ─────────────────────────────────────────────────── */
+.form { padding: 24px 20px 0; max-width: 480px; margin: 0 auto; }
+
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 14px;
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label:first-child { margin-top: 0; }
+.section-label::after { content:''; flex:1; height:1px; background:rgba(232,56,79,.15); }
+
+/* ── FIELDS ──────────────────────────────────────────────────────── */
+.field { margin-bottom: 12px; }
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--maroon);
+  margin-bottom: 6px;
+}
+label .hint { font-weight:400; color:var(--body); margin-left:4px; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--maroon);
+  background: var(--white);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+}
+input:focus, select:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(232,56,79,.08); }
+input::placeholder { color: rgba(107,86,96,.35); }
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B5660' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── TOGGLE ──────────────────────────────────────────────────────── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 14px;
+  cursor: pointer;
+}
+.toggle-label { font-size:14px; color:var(--maroon); font-weight:500; }
+.toggle-switch { position:relative; width:44px; height:26px; flex-shrink:0; }
+.toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
+.slider {
+  position: absolute; inset: 0;
+  background: rgba(59,13,42,.12);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: .25s;
+}
+.slider::before {
+  content: '';
+  position: absolute;
+  height: 20px; width: 20px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: .25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.toggle-switch input:checked + .slider { background: var(--red); }
+.toggle-switch input:checked + .slider::before { transform: translateX(18px); }
+
+.ped-input { margin-top: 10px; display: none; }
+.ped-input.show { display: block; }
+
+/* ── PLAN PICKER ─────────────────────────────────────────────────── */
+.plan-opts { display: flex; flex-direction: column; gap: 8px; }
+.plan-opt  {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.plan-opt:has(input:checked) { border-color: var(--red); background: rgba(232,56,79,.03); }
+.plan-opt input { width:16px; height:16px; accent-color:var(--red); flex-shrink:0; margin:0; padding:0; border:none; cursor:pointer; }
+.plan-opt-text { font-size:13px; color:var(--maroon); font-weight:500; }
+
+/* ── OUTPUT BOX ──────────────────────────────────────────────────── */
+.output-card {
+  margin: 24px 20px 0;
+  max-width: 480px;
+  background: var(--white);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.output-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.output-title  { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--body); }
+.expiry-chip   { font-size:10px; font-weight:600; color:var(--red); background:rgba(232,56,79,.08); padding:4px 9px; border-radius:20px; }
+
+.url-box {
+  background: #F7EFE8;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--maroon);
+  word-break: break-all;
+  line-height: 1.8;
+  min-height: 64px;
+}
+.url-empty { font-family:'DM Sans',sans-serif; font-size:13px; color:rgba(107,86,96,.4); font-style:italic; }
+
+/* ── BUTTONS ─────────────────────────────────────────────────────── */
+.btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity .2s, transform .1s;
+  text-decoration: none;
+  letter-spacing: -.2px;
+}
+.btn:active { transform: scale(.98); }
+.btn-copy   { background: var(--maroon); color: white; margin-top: 12px; }
+.btn-copy.success { background: #128C7E; }
+.btn-wa     { background: var(--green); color: white; margin-top: 10px; }
+.btn-preview{ background: transparent; border: 1.5px solid var(--border); color: var(--body); margin-top: 10px; font-size:13px; font-weight:500; }
+.btn[hidden]{ display: none; }
+
+/* ── TIPS ────────────────────────────────────────────────────────── */
+.tips {
+  margin: 20px 20px 0;
+  max-width: 480px;
+  background: rgba(45,10,34,.04);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.tips-title { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--body); margin-bottom:10px; }
+.tip { font-size:12px; color:var(--body); line-height:1.7; padding-left:14px; position:relative; }
+.tip::before { content:'·'; position:absolute; left:2px; color:var(--red); font-weight:900; font-size:16px; line-height:1.3; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────── */
+@media (min-width: 520px) {
+  .form, .output-card, .tips { max-width: 480px; margin-left: auto; margin-right: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">plum</div>
+  <div class="header-label">quote generator</div>
+</div>
+
+<!-- FORM -->
+<div class="form">
+
+  <!-- SECTION: YOUR DETAILS -->
+  <div class="section-label">your details</div>
+
+  <div class="field">
+    <label>your full name</label>
+    <input type="text" id="f-advisor" placeholder="e.g. Rohan Phatale" oninput="generate()">
+  </div>
+  <div class="field">
+    <label>your whatsapp <span class="hint">(with country code, no spaces)</span></label>
+    <input type="tel" id="f-wa" placeholder="919876543210" oninput="generate()">
+  </div>
+
+  <!-- SECTION: CUSTOMER DETAILS -->
+  <div class="section-label">customer details</div>
+
+  <div class="field">
+    <label>customer first name</label>
+    <input type="text" id="f-name" placeholder="e.g. Rohit" oninput="generate()">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>age</label>
+      <input type="number" id="f-age" placeholder="34" min="18" max="65" oninput="generate()">
+    </div>
+    <div class="field">
+      <label>cover <span class="hint">(₹ lakh)</span></label>
+      <input type="number" id="f-cover" placeholder="10" min="5" max="200" oninput="generate()">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>annual premium <span class="hint">(₹, exact from portal)</span></label>
+    <input type="number" id="f-premium" placeholder="7732" oninput="generate()">
+  </div>
+
+  <!-- PED TOGGLE -->
+  <div class="field">
+    <label class="toggle-row" for="f-ped-toggle">
+      <span class="toggle-label">pre-existing condition (PED)?</span>
+      <div class="toggle-switch">
+        <input type="checkbox" id="f-ped-toggle" onchange="togglePED()">
+        <span class="slider"></span>
+      </div>
+    </label>
+    <div class="ped-input" id="ped-input-wrap">
+      <input type="text" id="f-ped" placeholder="e.g. diabetes, hypertension, thyroid" oninput="generate()">
+    </div>
+  </div>
+
+  <!-- PLAN SELECTOR -->
+  <div class="field">
+    <label>recommended plan</label>
+    <select id="f-plan" onchange="generate()">
+      <option value="ICICI Lombard · Elevate">ICICI Lombard · Elevate</option>
+      <option value="HDFC Ergo · Optima Secure">HDFC Ergo · Optima Secure</option>
+      <option value="Niva Bupa · ReAssure 2.0">Niva Bupa · ReAssure 2.0</option>
+      <option value="Aditya Birla · Activ One">Aditya Birla · Activ One</option>
+      <option value="Star Health · Comprehensive">Star Health · Comprehensive</option>
+      <option value="Care Supreme">Care Supreme</option>
+    </select>
+  </div>
+
+  <!-- SECTION: LINK SETTINGS -->
+  <div class="section-label">link settings</div>
+
+  <div class="field">
+    <label>base URL <span class="hint">(your hosted quote page)</span></label>
+    <input type="url" id="f-base" value="https://YOUR-USERNAME.github.io/plum-quote/" oninput="generate()">
+  </div>
+
+</div>
+
+<!-- OUTPUT -->
+<div class="output-card" id="output-card">
+  <div class="output-header">
+    <div class="output-title">generated link</div>
+    <div class="expiry-chip" id="expiry-chip">expires in 15 days</div>
+  </div>
+  <div class="url-box" id="url-box">
+    <span class="url-empty">fill in customer name, age &amp; premium above</span>
+  </div>
+
+  <button class="btn btn-copy" id="btn-copy" hidden onclick="copyLink()">
+    📋 copy link
+  </button>
+
+  <button class="btn btn-wa" id="btn-wa" hidden onclick="shareWA()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+    send to customer via whatsapp
+  </button>
+
+  <a class="btn btn-preview" id="btn-preview" hidden target="_blank" href="#">
+    👁 preview quote page
+  </a>
+</div>
+
+<!-- TIPS -->
+<div class="tips">
+  <div class="tips-title">next steps after generating</div>
+  <div class="tip">paste the long link into <strong>short.io</strong> → get a clean link like <code>plumquote.in/rohit</code></div>
+  <div class="tip">set link expiry to <strong>15 days</strong> in short.io — it auto-disables</div>
+  <div class="tip">short.io tracks every click, device type, and city automatically</div>
+  <div class="tip">if customer hasn't opened in <strong>3 days</strong>, follow up on whatsapp</div>
+  <div class="tip">this tool works <strong>offline</strong> — save it to your home screen</div>
+</div>
+
+<!-- SCRIPT -->
+<script>
+let currentUrl = '';
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function v(id) { return document.getElementById(id).value.trim(); }
+
+function getExpiry() {
+  const d = new Date();
+  d.setDate(d.getDate() + 15);
+  const y   = d.getFullYear();
+  const m   = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return {
+    code:    `${y}${m}${day}`,
+    display: d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+  };
+}
+
+// ── PED TOGGLE ────────────────────────────────────────────────────
+function togglePED() {
+  const on = document.getElementById('f-ped-toggle').checked;
+  document.getElementById('ped-input-wrap').classList.toggle('show', on);
+  generate();
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────
+function generate() {
+  const name    = v('f-name');
+  const age     = v('f-age');
+  const premium = v('f-premium');
+  const cover   = v('f-cover');
+  const advisor = v('f-advisor');
+  const wa      = v('f-wa');
+  const plan    = v('f-plan');
+  const base    = v('f-base').replace(/\?.*$/, '').replace(/\/$/, '') + '/';
+  const pedOn   = document.getElementById('f-ped-toggle').checked;
+  const ped     = pedOn ? v('f-ped') : '';
+  const expiry  = getExpiry();
+
+  // Update expiry chip
+  document.getElementById('expiry-chip').textContent = 'expires ' + expiry.display;
+
+  // Need at minimum: name, age, premium
+  if (!name || !age || !premium) {
+    document.getElementById('url-box').innerHTML = '<span class="url-empty">fill in customer name, age &amp; premium above</span>';
+    ['btn-copy','btn-wa','btn-preview'].forEach(id => document.getElementById(id).hidden = true);
+    currentUrl = '';
+    return;
+  }
+
+  // Build params
+  const params = new URLSearchParams();
+  params.set('name',    name);
+  params.set('age',     age);
+  params.set('premium', premium);
+  if (cover)   params.set('cover',   cover);
+  if (advisor) params.set('advisor', advisor);
+  if (wa)      params.set('wa',      wa.replace(/\s+/g,''));
+  params.set('expiry', expiry.code);
+  if (ped)     params.set('ped',     ped);
+  if (plan)    params.set('plan',    plan);
+
+  currentUrl = base + '?' + params.toString();
+
+  // Render
+  document.getElementById('url-box').textContent = currentUrl;
+  ['btn-copy','btn-wa','btn-preview'].forEach(id => document.getElementById(id).hidden = false);
+  document.getElementById('btn-preview').href = currentUrl;
+}
+
+// ── COPY ──────────────────────────────────────────────────────────
+async function copyLink() {
+  if (!currentUrl) return;
+  try {
+    await navigator.clipboard.writeText(currentUrl);
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = '✓ copied to clipboard!';
+    btn.classList.add('success');
+    setTimeout(() => {
+      btn.textContent = '📋 copy link';
+      btn.classList.remove('success');
+    }, 2500);
+  } catch {
+    // Fallback for older mobile browsers
+    const ta = document.createElement('textarea');
+    ta.value = currentUrl;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = '✓ copied!';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📋 copy link'; btn.classList.remove('success'); }, 2000);
+  }
+}
+
+// ── WHATSAPP SHARE ────────────────────────────────────────────────
+function shareWA() {
+  if (!currentUrl) return;
+  const name    = v('f-name') || 'there';
+  const advisor = v('f-advisor').split(' ')[0] || 'your advisor';
+  const msg = `Hi ${name}, I've put together a personalised health insurance quote for you and your family.\n\nTake 3 minutes to review it here:\n${currentUrl}\n\nAny questions, just reply here — happy to walk you through it.\n\n— ${advisor}, plum`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg));
+}
+</script>
+</body>
+</html>
